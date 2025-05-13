@@ -1,6 +1,6 @@
 @web_api_userscontroller_swagger_HostAddress = http://localhost:5128
 
-GET {{web_api_userscontroller_swagger_HostAddress}}/weatherforecast/
+GET {{web_api_userscontroller_swagger_HostAddress}}/Users
 Accept: application/json
 
 ###
