@@ -42,7 +42,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Введите токен JWT, полученный через /Users/login. Пример: Bearer {ваш_токен}"
+        Description = "Введите токен JWT в поле Value, полученный через /Users/login. Пример: [ваш_токен]"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -55,6 +55,12 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    options.EnableAnnotations();
+
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
 });
 
 builder.Services.AddCors(options =>

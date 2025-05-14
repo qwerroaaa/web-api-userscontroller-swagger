@@ -20,8 +20,8 @@ namespace web_api_userscontroller_swagger.Controllers
             users.Add(new User
             {
                 Guid = Guid.NewGuid(),
-                Login = "Admin777",
-                Password = "password",
+                Login = "Admin1",
+                Password = "1",
                 Name = "Admin",
                 Gender = 0,
                 Birthday = null,
@@ -33,6 +33,9 @@ namespace web_api_userscontroller_swagger.Controllers
             });
         }
 
+        /// <summary>
+        /// Get Token for Authorization
+        /// </summary>
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDTO dto)
         {
@@ -60,12 +63,19 @@ namespace web_api_userscontroller_swagger.Controllers
             return Ok(new { token = jwt });
         }
 
+        /// <summary>
+        /// Get all users 
+        /// </summary>
         [HttpGet]
-        public ActionResult<List<User>> GetAll()
+        public ActionResult<List<User>> GetAll() //вывод всех пользователей
         {
             return Ok(users);
         }
 
+
+        /// <summary>
+        /// Find a User by ID
+        /// </summary>
         [HttpGet("{guid}")]
         public ActionResult<User> GetByGuid(Guid guid) // ID search
         {
@@ -73,6 +83,9 @@ namespace web_api_userscontroller_swagger.Controllers
             return user == null ? NotFound() : Ok(user);
         }
 
+        /// <summary>
+        /// Create a User by Admin
+        /// </summary>
         [Authorize]
         [HttpPost]
         public ActionResult<User> CreateUser(CreateUserDTO dto)
