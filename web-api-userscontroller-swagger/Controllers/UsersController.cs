@@ -176,5 +176,70 @@ namespace web_api_userscontroller_swagger.Controllers
 
             return Ok(userToUpdate);
         }
+
+        /// <summary>
+        /// Change user password (admin or self)
+        /// </summary>
+        [HttpPut("{login}/change-password")]
+        public IActionResult ChangePassword(string login, [FromBody] ChangePasswordDTO dto)
+        {
+            var userToUpdate = users.FirstOrDefault(u => u.Login == login);
+            if (userToUpdate == null)
+                return NotFound("Пользователь не найден");
+
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            var isAdmin = jwtUser.Admin;
+            var isSelf = jwtUser.Guid == userToUpdate.Guid;
+            var isActive = userToUpdate.RevokedOn == null;
+
+            if (!(isAdmin || (isSelf && isActive)))
+                return Forbid("Нет прав на изменение пароля");
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                return BadRequest("Пароль не может быть пустым");
+
+            userToUpdate.Password = dto.Password;
+            userToUpdate.ModifiedOn = DateTime.Now;
+            userToUpdate.ModifiedBy = jwtUser.Login;
+
+            return Ok("Пароль успешно изменён");
+        }
+
+        /// <summary>
+        /// Change user login (admin or self, if active). Login must remain unique.
+        /// </summary>
+        [HttpPut("{login}/change-login")]
+        public IActionResult ChangeLogin(string login, [FromBody] ChangeLoginDTO dto)
+        {
+            var userToUpdate = users.FirstOrDefault(u => u.Login == login);
+            if (userToUpdate == null)
+                return NotFound("Пользователь не найден");
+
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            var isAdmin = jwtUser.Admin;
+            var isSelf = jwtUser.Guid == userToUpdate.Guid;
+            var isActive = userToUpdate.RevokedOn == null;
+
+            if (!(isAdmin || (isSelf && isActive)))
+                return Forbid("Нет прав на изменение логина");
+
+            if (string.IsNullOrWhiteSpace(dto.Login))
+                return BadRequest("Новый логин не может быть пустым");
+
+            if (users.Any(u => u.Login == dto.Login && u.Guid != userToUpdate.Guid))
+                return Conflict("Пользователь с таким логином уже существует");
+
+            userToUpdate.Login = dto.Login;
+            userToUpdate.ModifiedOn = DateTime.Now;
+            userToUpdate.ModifiedBy = jwtUser.Login;
+
+            return Ok("Логин успешно изменён");
+        }
     }
 }
