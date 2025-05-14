@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +16,7 @@ namespace web_api_userscontroller_swagger.Controllers
     {
         private static List<User> users = new();
 
-        static UsersController() //register admin
+        static UsersController() //register admin and test user
         {
             users.Add(new User
             {
@@ -26,6 +27,21 @@ namespace web_api_userscontroller_swagger.Controllers
                 Gender = 0,
                 Birthday = null,
                 Admin = true,
+                CreatedOn = DateTime.Now,
+                CreatedBy = "System",
+                ModifiedOn = DateTime.Now,
+                ModifiedBy = "System"
+            });
+
+            users.Add(new User
+            {
+                Guid = Guid.NewGuid(),
+                Login = "User1",
+                Password = "1",
+                Name = "User",
+                Gender = 1,
+                Birthday = null,
+                Admin = false,
                 CreatedOn = DateTime.Now,
                 CreatedBy = "System",
                 ModifiedOn = DateTime.Now,
@@ -121,6 +137,44 @@ namespace web_api_userscontroller_swagger.Controllers
 
             users.Add(user);
             return CreatedAtAction(nameof(GetByGuid), new { guid = user.Guid }, user);
+        }
+
+        private User? GetCurrentUserFromToken(HttpContext context)
+        {
+            var login = context.User.Identity?.Name;
+            return users.FirstOrDefault(u => u.Login == login);
+        }
+
+        /// <summary>
+        /// Update user info (admin or self)
+        /// </summary>
+        [HttpPut("{login}")]
+        public IActionResult UpdateUserInfo (string login, [FromBody] UpdateUserDTO dto)
+        {
+            var userToUpdate = users.FirstOrDefault(u => u.Login == login);
+            if (userToUpdate == null)
+                return NotFound("Пользователь не найден");
+
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            var isAdmin = jwtUser.Admin;
+            var isSelf = jwtUser.Guid == userToUpdate.Guid;
+            var isActive = userToUpdate.RevokedOn == null;
+
+            if (!(isAdmin || (isSelf && isActive)))
+                return Forbid("Нет прав на изменение этого пользователя");
+
+            userToUpdate.Name = dto.Name;
+            userToUpdate.Gender = dto.Gender;
+            if (dto.Birthday.HasValue)
+                userToUpdate.Birthday = dto.Birthday;
+
+            userToUpdate.ModifiedOn = DateTime.Now;
+            userToUpdate.ModifiedBy = jwtUser.Login;
+
+            return Ok(userToUpdate);
         }
     }
 }
