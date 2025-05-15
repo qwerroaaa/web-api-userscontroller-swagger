@@ -41,7 +41,7 @@ namespace web_api_userscontroller_swagger.Controllers
                 Password = "1",
                 Name = "User",
                 Gender = 1,
-                Birthday = null,
+                Birthday = new DateTime(2005, 7, 20, 18, 30, 25),
                 Admin = false,
                 CreatedOn = DateTime.Now,
                 CreatedBy = "System",
@@ -262,6 +262,76 @@ namespace web_api_userscontroller_swagger.Controllers
             var activeUsers = users.Where(u => u.RevokedOn == null).OrderBy(u => u.CreatedOn).ToList();
 
             return Ok(activeUsers);
+        }
+
+        /// <summary>
+        /// Get list of users info. Read method number 6
+        /// </summary>
+        [HttpGet("{login}/userInfo")]
+        public IActionResult GetInfoOfUsers(string login)
+        {
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            if (!jwtUser.Admin)
+                return Forbid("Нет прав на просмотр. Нужны права администратора");
+
+            var user = users.FirstOrDefault(u => u.Login == login);
+            if (user == null)
+                return NotFound("Пользователь не найден");
+
+            var dto = new UserInfoDTO
+            {
+                Name = user.Name,
+                Gender = user.Gender,
+                Birthday = user.Birthday,
+                Status = user.RevokedOn == null ? "Active" : "Revoked"
+            };
+
+            return Ok(dto);
+        }
+
+        /// <summary>
+        /// Get user information(???????) by login and password
+        /// </summary>
+        [HttpPost("self")]
+        public IActionResult GetSelfByLoginAndPassword([FromBody] LoginPasswordDTO dto)
+        {
+            var user = users.FirstOrDefault(u => u.Login == dto.Login && u.Password == dto.Password);
+            if (user == null)
+                return NotFound("Неверный логин или пароль");
+
+            if (user.RevokedOn != null)
+                return Forbid("Аккаунт заблокирован");
+
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null || jwtUser.Login != user.Login)
+                return Forbid("Нет прав на просмотр. Только владелец может получить эти данные");
+
+            return Ok(user);
+        }
+
+        /// <summary>
+        /// Get all users who older than [age]
+        /// </summary>
+        [HttpGet("user-age/{age}")]
+        public IActionResult GetAllUsersWhoOlderThanAgeNumber(int age)
+        {
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            if (!jwtUser.Admin)
+                return Forbid("Нет прав на просмотр. Нужны права администратора");
+
+            var today = DateTime.Today;
+            var usersOlderThan = users
+                .Where(u => u.Birthday.HasValue && (today.Year - u.Birthday.Value.Year -
+                       (u.Birthday.Value.Date > today.AddYears(-age) ? 1 : 0)) > age)
+                .ToList();
+
+            return Ok(usersOlderThan);
         }
     }
 }
