@@ -30,7 +30,8 @@ namespace web_api_userscontroller_swagger.Controllers
                 CreatedOn = DateTime.Now,
                 CreatedBy = "System",
                 ModifiedOn = DateTime.Now,
-                ModifiedBy = "System"
+                ModifiedBy = "System",
+                RevokedOn = null
             });
 
             users.Add(new User
@@ -45,7 +46,8 @@ namespace web_api_userscontroller_swagger.Controllers
                 CreatedOn = DateTime.Now,
                 CreatedBy = "System",
                 ModifiedOn = DateTime.Now,
-                ModifiedBy = "System"
+                ModifiedBy = "System",
+                RevokedOn = null
             });
         }
 
@@ -80,7 +82,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Get all users 
+        /// Get all users w/o conditions
         /// </summary>
         [HttpGet]
         public ActionResult<List<User>> GetAll() //вывод всех пользователей
@@ -132,7 +134,8 @@ namespace web_api_userscontroller_swagger.Controllers
                 CreatedOn = DateTime.UtcNow,
                 CreatedBy = login,
                 ModifiedOn = DateTime.UtcNow,
-                ModifiedBy = login
+                ModifiedBy = login,
+                RevokedOn = null
             };
 
             users.Add(user);
@@ -146,7 +149,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Update user info (admin or self)
+        /// Update user info
         /// </summary>
         [HttpPut("{login}")]
         public IActionResult UpdateUserInfo (string login, [FromBody] UpdateUserDTO dto)
@@ -178,7 +181,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Change user password (admin or self)
+        /// Change user password
         /// </summary>
         [HttpPut("{login}/change-password")]
         public IActionResult ChangePassword(string login, [FromBody] ChangePasswordDTO dto)
@@ -209,7 +212,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Change user login (admin or self, if active). Login must remain unique.
+        /// Change user login. Login must be unique.
         /// </summary>
         [HttpPut("{login}/change-login")]
         public IActionResult ChangeLogin(string login, [FromBody] ChangeLoginDTO dto)
@@ -240,6 +243,25 @@ namespace web_api_userscontroller_swagger.Controllers
             userToUpdate.ModifiedBy = jwtUser.Login;
 
             return Ok("Логин успешно изменён");
+        }
+
+
+        /// <summary>
+        /// Get list of active users. Sorted by CreatedOn
+        /// </summary>
+        [HttpGet("active")]
+        public IActionResult GetActiveUsers()
+        {
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            if(!jwtUser.Admin)
+                return Forbid("Нет прав на просмотр. Нужны права администратора");
+
+            var activeUsers = users.Where(u => u.RevokedOn == null).OrderBy(u => u.CreatedOn).ToList();
+
+            return Ok(activeUsers);
         }
     }
 }
