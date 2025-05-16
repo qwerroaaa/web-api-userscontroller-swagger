@@ -333,5 +333,67 @@ namespace web_api_userscontroller_swagger.Controllers
 
             return Ok(usersOlderThan);
         }
+
+        /// <summary>
+        /// Delete user full or soft. Full == true, soft == false
+        /// </summary>
+        [HttpDelete("{login}")]
+        public IActionResult DeleteUser(string login, [FromBody] DeleteUserDTO dto)
+        {
+            var user = users.FirstOrDefault(u => u.Login == login);
+            if (user == null)
+                return NotFound("Пользователь не найден");
+
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            if (!jwtUser.Admin)
+                return Forbid("Доступ только для админа");
+
+            if (dto.TypeDelete)
+            {
+                users.Remove(user);
+                return Ok($"Пользователь {login} полностью удалён");
+            } 
+            else
+            {
+                if (user.RevokedOn != null)
+                    return BadRequest("Пользователь уже удален");
+
+                user.RevokedOn = DateTime.Now;
+                user.RevokedBy = jwtUser.Login;
+
+                return Ok($"Пользователь {login} мягко удалён");
+            }
+        }
+
+        /// <summary>
+        /// Restore user
+        /// </summary>
+        [HttpPut("restore/{login}")]
+        public IActionResult RestoreUser(string login)
+        {
+            var user = users.FirstOrDefault(u => u.Login == login);
+            if (user == null)
+                return NotFound("Пользователь не найден");
+
+            var jwtUser = GetCurrentUserFromToken(HttpContext);
+            if (jwtUser == null)
+                return Unauthorized("Невалидный токен");
+
+            if (!jwtUser.Admin)
+                return Forbid("Нет прав администратора");
+
+            if (user.RevokedOn == null && string.IsNullOrEmpty(user.RevokedBy))
+                return BadRequest("Пользователь уже активен");
+
+            user.RevokedOn = null;
+            user.RevokedBy = null;
+            user.ModifiedOn = DateTime.Now;
+            user.ModifiedBy = jwtUser.Login;
+
+            return Ok($"Пользователь {login} успешно восстановлен");
+        }
     }
 }
