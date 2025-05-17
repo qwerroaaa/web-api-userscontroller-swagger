@@ -105,7 +105,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Create a User by Admin
+        /// [Create-1] Create a User by Admin
         /// </summary>
         [Authorize]
         [HttpPost]
@@ -162,7 +162,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Update user info
+        /// [Update-2] Update user info
         /// </summary>
         [HttpPut("{login}")]
         public IActionResult UpdateUserInfo (string login, [FromBody] UpdateUserDTO dto)
@@ -208,7 +208,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Change user password
+        /// [Update-3] Change user password
         /// </summary>
         [HttpPut("{login}/change-password")]
         public IActionResult ChangePassword(string login, [FromBody] ChangePasswordDTO dto)
@@ -239,7 +239,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Change user login. Login must be unique.
+        /// [Update-4] Change user login. Login must be unique.
         /// </summary>
         [HttpPut("{login}/change-login")]
         public IActionResult ChangeLogin(string login, [FromBody] ChangeLoginDTO dto)
@@ -281,7 +281,7 @@ namespace web_api_userscontroller_swagger.Controllers
 
 
         /// <summary>
-        /// Get list of active users. Sorted by CreatedOn
+        /// [Read-5] Get list of active users. Sorted by CreatedOn
         /// </summary>
         [HttpGet("active")]
         public IActionResult GetActiveUsers()
@@ -299,7 +299,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Get list of users info. Read method number 6
+        /// [Read-6] Get list of users info.
         /// </summary>
         [HttpGet("{login}/userInfo")]
         public IActionResult GetInfoOfUsers(string login)
@@ -327,7 +327,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Get user information(???????) by login and password
+        /// [Read-7] Get user information(?) by login and password
         /// </summary>
         [HttpPost("self")]
         public IActionResult GetSelfByLoginAndPassword([FromBody] LoginPasswordDTO dto)
@@ -347,7 +347,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Get all users who older than [age]
+        /// [Read-8] Get all users who older than [age]
         /// </summary>
         [HttpGet("user-age/{age}")]
         public IActionResult GetAllUsersWhoOlderThanAgeNumber(int age)
@@ -369,7 +369,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Delete user full or soft. Full == true, soft == false
+        /// [Delete-9] Delete user full or soft. Full == true, soft == false
         /// </summary>
         [HttpDelete("{login}")]
         public IActionResult DeleteUser(string login, [FromBody] DeleteUserDTO dto)
@@ -403,7 +403,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Restore user
+        /// [Update-10] Restore user
         /// </summary>
         [HttpPut("restore/{login}")]
         public IActionResult RestoreUser(string login)
