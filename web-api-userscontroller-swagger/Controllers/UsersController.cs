@@ -52,14 +52,17 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Get Token for Authorization
+        /// Get Token for Authorization. Login: Admin1; Password: 1
         /// </summary>
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDTO dto)
         {
             var user = users.FirstOrDefault(u => u.Login == dto.Login && u.Password == dto.Password);
             if (user == null)
-                return Unauthorized("Invalid credentials.");
+                return Unauthorized("Неверный логин или пароль.");
+
+            if (user.RevokedOn != null)
+                return BadRequest("Пользователь с такими данными заблокирован. Обратитесь к администратору");
 
             var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes("a0b0605d01d04e41335a28aa47ec6ac4a4bdc2ebacf84f393846e217beb823c8");
@@ -82,7 +85,7 @@ namespace web_api_userscontroller_swagger.Controllers
         }
 
         /// <summary>
-        /// Get all users w/o conditions
+        /// [NOT INCLUDE IN TASK] Get all users w/o conditions
         /// </summary>
         [HttpGet]
         public ActionResult<List<User>> GetAll() //вывод всех пользователей
@@ -92,7 +95,7 @@ namespace web_api_userscontroller_swagger.Controllers
 
 
         /// <summary>
-        /// Find a User by ID
+        /// [NOT INCLUDE IN TASK] Find a User by ID
         /// </summary>
         [HttpGet("{guid}")]
         public ActionResult<User> GetByGuid(Guid guid) // ID search
@@ -113,13 +116,23 @@ namespace web_api_userscontroller_swagger.Controllers
 
             //import JWT 
             if (!isAdmin)
-                return Forbid("Only administrators can create users.");
+                return Forbid("Только администратор может создать пользователя.");
 
             if (!Regex.IsMatch(dto.Login, "^[a-zA-Z0-9]+$") ||
                 !Regex.IsMatch(dto.Password, "^[a-zA-Z0-9]+$") ||
                 !Regex.IsMatch(dto.Name, "^[a-zA-Zа-яА-Я]+$"))
             {
-                return BadRequest("Invalid input format.");
+                return BadRequest("Неверный ввод логина, пароля или имени.");
+            }
+
+            if (users.Any(u => u.Login == dto.Login))
+            {
+                return Conflict("Пользователь с таким логином уже существует.");
+            }
+
+            if (dto.Gender < 0 || dto.Gender > 2)
+            {
+                return BadRequest("Недопустимое значение для пола. Разрешены только 0, 1 или 2.");
             }
 
             var user = new User
@@ -169,8 +182,22 @@ namespace web_api_userscontroller_swagger.Controllers
             if (!(isAdmin || (isSelf && isActive)))
                 return Forbid("Нет прав на изменение этого пользователя");
 
-            userToUpdate.Name = dto.Name;
-            userToUpdate.Gender = dto.Gender;
+            if(!Regex.IsMatch(dto.Name, "^[a-zA-Zа-яА-Я]+$"))
+            {
+                return BadRequest("Неверный ввод имени.");
+            } else
+            {
+                userToUpdate.Name = dto.Name;
+            }
+
+            if (dto.Gender < 0 || dto.Gender > 2)
+            {
+                return BadRequest("Недопустимое значение для пола. Разрешены только 0, 1 или 2.");
+            } else
+            {
+                userToUpdate.Gender = dto.Gender;
+            }
+
             if (dto.Birthday.HasValue)
                 userToUpdate.Birthday = dto.Birthday;
 
