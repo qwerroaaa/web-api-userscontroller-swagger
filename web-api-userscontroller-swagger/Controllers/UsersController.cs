@@ -265,7 +265,14 @@ namespace web_api_userscontroller_swagger.Controllers
             if (users.Any(u => u.Login == dto.Login && u.Guid != userToUpdate.Guid))
                 return Conflict("Пользователь с таким логином уже существует");
 
-            userToUpdate.Login = dto.Login;
+            if (!Regex.IsMatch(dto.Login, "^[a-zA-Z0-9]+$")) 
+            {
+                return BadRequest("Неверный ввод логина.");
+            }
+            else
+            {
+                userToUpdate.Login = dto.Login;
+            }
             userToUpdate.ModifiedOn = DateTime.Now;
             userToUpdate.ModifiedBy = jwtUser.Login;
 
