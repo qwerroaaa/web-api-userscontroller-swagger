@@ -199,7 +199,13 @@ namespace web_api_userscontroller_swagger.Controllers
             }
 
             if (dto.Birthday.HasValue)
+            {
                 userToUpdate.Birthday = dto.Birthday;
+            }
+            else
+            {
+                userToUpdate.Birthday = null;
+            }
 
             userToUpdate.ModifiedOn = DateTime.Now;
             userToUpdate.ModifiedBy = jwtUser.Login;
